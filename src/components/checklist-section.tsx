@@ -81,10 +81,10 @@ export default function ChecklistSection({
           <li key={item.id}>
             <button
               onClick={() => toggle(item)}
-              className="flex w-full items-center gap-3 rounded-xl px-2 py-3 text-left transition active:scale-[0.99] hover:bg-neutral-800/50"
+              className="flex w-full items-start gap-3 rounded-xl px-2 py-3 text-left transition active:scale-[0.99] hover:bg-neutral-800/50"
             >
               <span
-                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition ${
+                className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition ${
                   item.completed
                     ? "border-emerald-500 bg-emerald-500 text-neutral-950"
                     : "border-neutral-600 bg-transparent"
@@ -92,16 +92,32 @@ export default function ChecklistSection({
               >
                 {item.completed && <Check className="h-4 w-4" strokeWidth={3} />}
               </span>
-              <span className="flex-1">
-                <span
-                  className={`block text-sm transition ${
-                    item.completed
-                      ? "text-neutral-500 line-through"
-                      : "text-neutral-100"
-                  }`}
-                >
-                  {item.name}
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-2">
+                  <span
+                    className={`text-sm font-medium transition ${
+                      item.completed
+                        ? "text-neutral-500 line-through"
+                        : "text-neutral-100"
+                    }`}
+                  >
+                    {item.name}
+                  </span>
+                  {item.time && (
+                    <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-neutral-400">
+                      {item.time.slice(0, 5)}
+                    </span>
+                  )}
                 </span>
+                {item.detail && (
+                  <span
+                    className={`mt-0.5 block whitespace-pre-line text-xs leading-relaxed transition ${
+                      item.completed ? "text-neutral-600" : "text-neutral-400"
+                    }`}
+                  >
+                    {item.detail}
+                  </span>
+                )}
                 {item.category && (
                   <span className="text-xs text-neutral-500">
                     {item.category}

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import type { UserProfile } from "@/lib/types";
 import {
   bogotaDate,
   bogotaPretty,
@@ -16,6 +17,7 @@ import {
   Settings,
   LogOut,
   Flame,
+  Target,
 } from "lucide-react";
 
 function ProgressRing({ done, total }: { done: number; total: number }) {
@@ -74,6 +76,7 @@ export default async function DashboardPage() {
     mealLogsRes,
     sessionRes,
     streakLogsRes,
+    profileRes,
   ] = await Promise.all([
     supabase.from("habits").select("id").eq("active", true),
     supabase.from("meals").select("id").eq("active", true),
@@ -97,6 +100,7 @@ export default async function DashboardPage() {
       .select("log_date")
       .eq("completed", true)
       .gte("log_date", sinceDate),
+    supabase.from("user_profile").select("*").maybeSingle(),
   ]);
 
   const habitsTotal = habitsRes.data?.length ?? 0;
@@ -126,6 +130,17 @@ export default async function DashboardPage() {
   while (isComplete(bogotaDate(cursor))) {
     streak++;
     cursor.setDate(cursor.getDate() - 1);
+  }
+
+  const profile = profileRes.data as UserProfile | null;
+  let cycleWeek: number | null = null;
+  if (profile?.cycle_start) {
+    const start = new Date(`${profile.cycle_start}T12:00:00`);
+    const today = new Date(`${logDate}T12:00:00`);
+    const diffDays = Math.floor(
+      (today.getTime() - start.getTime()) / 86_400_000
+    );
+    if (diffDays >= 0) cycleWeek = Math.floor(diffDays / 7) + 1;
   }
 
   const cards = [
@@ -188,6 +203,39 @@ export default async function DashboardPage() {
           </form>
         </div>
       </header>
+
+      {/* Objetivo del ciclo */}
+      {profile?.objective && (
+        <section className="mb-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400">
+              <Target className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] uppercase tracking-wide text-emerald-400/80">
+                Objetivo del ciclo
+              </p>
+              <p className="font-semibold text-white">{profile.objective}</p>
+              {profile.priorities && (
+                <p className="mt-0.5 text-xs text-neutral-400">
+                  Prioridad: {profile.priorities}
+                </p>
+              )}
+            </div>
+            {cycleWeek && profile.cycle_weeks && (
+              <div className="flex flex-col items-center rounded-xl bg-neutral-900 px-3 py-1.5">
+                <span className="text-[10px] text-neutral-500">Semana</span>
+                <span className="text-lg font-bold leading-none text-white">
+                  {Math.min(cycleWeek, profile.cycle_weeks)}
+                </span>
+                <span className="text-[10px] text-neutral-500">
+                  de {profile.cycle_weeks}
+                </span>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Resumen del día */}
       <section className="mb-6 flex items-center gap-4 rounded-2xl border border-neutral-800 bg-gradient-to-br from-neutral-900 to-neutral-900/40 p-5">

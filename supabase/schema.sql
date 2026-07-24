@@ -110,6 +110,8 @@ create table if not exists public.meals (
   id             uuid primary key default uuid_generate_v4(),
   user_id        uuid not null references auth.users(id) on delete cascade,
   name           text not null,          -- Pre-Entreno, Post-Entreno, etc.
+  foods          text,                   -- alimentos y cantidades
+  purpose        text,                   -- propósito estratégico
   order_index    int not null default 0,
   active         boolean not null default true,
   scheduled_time time,                    -- horario para recordatorios
@@ -155,11 +157,30 @@ create table if not exists public.habit_logs (
 );
 
 -- =============================================================
+-- MÓDULO 4: PERFIL / OBJETIVO DEL USUARIO
+-- =============================================================
+create table if not exists public.user_profile (
+  user_id     uuid primary key references auth.users(id) on delete cascade,
+  objective   text,
+  priorities  text,
+  cycle_weeks int,
+  cycle_start date,
+  notes       text,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+-- =============================================================
 -- TRIGGERS updated_at
 -- =============================================================
 drop trigger if exists trg_workout_sessions_updated on public.workout_sessions;
 create trigger trg_workout_sessions_updated
   before update on public.workout_sessions
+  for each row execute function public.handle_updated_at();
+
+drop trigger if exists trg_user_profile_updated on public.user_profile;
+create trigger trg_user_profile_updated
+  before update on public.user_profile
   for each row execute function public.handle_updated_at();
 
 -- =============================================================
@@ -183,6 +204,7 @@ alter table public.meals                  enable row level security;
 alter table public.meal_logs              enable row level security;
 alter table public.habits                 enable row level security;
 alter table public.habit_logs             enable row level security;
+alter table public.user_profile           enable row level security;
 
 -- Políticas para tablas con user_id directo
 create policy "own_exercises"        on public.exercises        for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
@@ -194,6 +216,7 @@ create policy "own_meals"            on public.meals            for all using (a
 create policy "own_meal_logs"        on public.meal_logs        for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "own_habits"           on public.habits           for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "own_habit_logs"       on public.habit_logs       for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "own_profile"          on public.user_profile     for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- Políticas para tablas hijas (se validan vía la sesión padre)
 create policy "own_session_exercises" on public.session_exercises for all

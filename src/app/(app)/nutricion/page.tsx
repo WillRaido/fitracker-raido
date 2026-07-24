@@ -26,6 +26,8 @@ export default async function NutricionPage() {
   const items: ChecklistItem[] = meals.map((m) => ({
     id: m.id,
     name: m.name,
+    time: m.scheduled_time,
+    detail: m.foods,
     completed: done.get(m.id) ?? false,
   }));
 

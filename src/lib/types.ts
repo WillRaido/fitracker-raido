@@ -13,10 +13,23 @@ export type Meal = {
   id: string;
   user_id: string;
   name: string;
+  foods: string | null;
+  purpose: string | null;
   order_index: number;
   active: boolean;
   scheduled_time: string | null;
   created_at: string;
+};
+
+export type UserProfile = {
+  user_id: string;
+  objective: string | null;
+  priorities: string | null;
+  cycle_weeks: number | null;
+  cycle_start: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type PlanDay = {
@@ -66,6 +79,8 @@ export type ChecklistItem = {
   id: string;
   name: string;
   category?: string | null;
+  time?: string | null;
+  detail?: string | null;
   completed: boolean;
 };
 
