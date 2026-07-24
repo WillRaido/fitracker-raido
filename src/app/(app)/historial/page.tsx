@@ -1,6 +1,7 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Dumbbell, CalendarDays } from "lucide-react";
+import { Dumbbell, CalendarDays, ChevronRight } from "lucide-react";
 
 export default async function HistorialPage() {
   const supabase = createClient();
@@ -49,19 +50,24 @@ export default async function HistorialPage() {
               timeZone: "America/Bogota",
             }).format(new Date(`${s.session_date}T12:00:00`));
             return (
-              <li
-                key={s.id}
-                className="flex items-center justify-between rounded-2xl border border-neutral-800 bg-neutral-900/50 p-4"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400">
-                    <Dumbbell className="h-5 w-5" />
-                  </span>
-                  <span className="capitalize text-neutral-100">{date}</span>
-                </div>
-                <span className="text-sm text-neutral-400">
-                  {s.session_exercises.length} ejercicios
-                </span>
+              <li key={s.id}>
+                <Link
+                  href={`/historial/${s.id}`}
+                  className="group flex items-center justify-between rounded-2xl border border-neutral-800 bg-neutral-900/50 p-4 transition hover:border-neutral-700 hover:bg-neutral-900"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400">
+                      <Dumbbell className="h-5 w-5" />
+                    </span>
+                    <span className="capitalize text-neutral-100">{date}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-neutral-400">
+                      {s.session_exercises.length} ejercicios
+                    </span>
+                    <ChevronRight className="h-5 w-5 text-neutral-600 transition group-hover:text-neutral-400" />
+                  </div>
+                </Link>
               </li>
             );
           })}
