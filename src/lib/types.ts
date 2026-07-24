@@ -5,6 +5,7 @@ export type Habit = {
   category: string | null;
   order_index: number;
   active: boolean;
+  scheduled_time: string | null;
   created_at: string;
 };
 
@@ -14,7 +15,18 @@ export type Meal = {
   name: string;
   order_index: number;
   active: boolean;
+  scheduled_time: string | null;
   created_at: string;
+};
+
+/** Item editable de catálogo (comida o hábito). */
+export type ManagedItem = {
+  id: string;
+  name: string;
+  category?: string | null;
+  scheduled_time: string | null;
+  order_index: number;
+  active: boolean;
 };
 
 export type DailyLog = {

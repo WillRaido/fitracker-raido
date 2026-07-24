@@ -82,12 +82,13 @@ create table if not exists public.exercise_sets (
 
 -- 2.1 Catálogo de comidas del meal prep (con defaults)
 create table if not exists public.meals (
-  id          uuid primary key default uuid_generate_v4(),
-  user_id     uuid not null references auth.users(id) on delete cascade,
-  name        text not null,          -- Pre-Entreno, Post-Entreno, etc.
-  order_index int not null default 0,
-  active      boolean not null default true,
-  created_at  timestamptz not null default now()
+  id             uuid primary key default uuid_generate_v4(),
+  user_id        uuid not null references auth.users(id) on delete cascade,
+  name           text not null,          -- Pre-Entreno, Post-Entreno, etc.
+  order_index    int not null default 0,
+  active         boolean not null default true,
+  scheduled_time time,                    -- horario para recordatorios
+  created_at     timestamptz not null default now()
 );
 
 -- 2.2 Registro diario: ¿comida preparada/consumida? (checkbox)
@@ -107,13 +108,14 @@ create table if not exists public.meal_logs (
 
 -- 3.1 Catálogo de hábitos (con defaults)
 create table if not exists public.habits (
-  id          uuid primary key default uuid_generate_v4(),
-  user_id     uuid not null references auth.users(id) on delete cascade,
-  name        text not null,          -- Chin Tucks, Isométricos de cuello, etc.
-  category    text,                   -- Movilidad, Postura, Hidratación
-  order_index int not null default 0,
-  active      boolean not null default true,
-  created_at  timestamptz not null default now()
+  id             uuid primary key default uuid_generate_v4(),
+  user_id        uuid not null references auth.users(id) on delete cascade,
+  name           text not null,          -- Chin Tucks, Isométricos de cuello, etc.
+  category       text,                   -- Movilidad, Postura, Hidratación
+  order_index    int not null default 0,
+  active         boolean not null default true,
+  scheduled_time time,                    -- horario para recordatorios
+  created_at     timestamptz not null default now()
 );
 
 -- 3.2 Registro diario de hábitos (checkbox)
@@ -185,21 +187,21 @@ create policy "own_exercise_sets" on public.exercise_sets for all
 create or replace function public.seed_user_defaults()
 returns trigger as $$
 begin
-  -- 5 comidas por defecto
-  insert into public.meals (user_id, name, order_index) values
-    (new.id, 'Pre-Entreno',    1),
-    (new.id, 'Post-Entreno',   2),
-    (new.id, 'Pre-Turno',      3),
-    (new.id, 'Snack Nocturno', 4),
-    (new.id, 'Caseína',        5);
+  -- 5 comidas por defecto (con horarios del Raido Protocol)
+  insert into public.meals (user_id, name, order_index, scheduled_time) values
+    (new.id, 'Pre-Entreno',    1, '11:00'),
+    (new.id, 'Post-Entreno',   2, '14:00'),
+    (new.id, 'Pre-Turno',      3, '16:30'),
+    (new.id, 'Snack Nocturno', 4, '21:00'),
+    (new.id, 'Caseína',        5, '23:30');
 
   -- Hábitos y postura por defecto
-  insert into public.habits (user_id, name, category, order_index) values
-    (new.id, 'Movilidad pre-entreno',           'Movilidad',   1),
-    (new.id, 'Chin Tucks (retracción cervical)','Postura',     2),
-    (new.id, 'Isométricos de cuello',           'Postura',     3),
-    (new.id, 'Estiramiento de Psoas (Caballero)','Movilidad',  4),
-    (new.id, 'Ingesta de agua/sal',             'Hidratación', 5);
+  insert into public.habits (user_id, name, category, order_index, scheduled_time) values
+    (new.id, 'Movilidad pre-entreno',           'Movilidad',   1, '10:45'),
+    (new.id, 'Chin Tucks (retracción cervical)','Postura',     2, '19:30'),
+    (new.id, 'Isométricos de cuello',           'Postura',     3, '19:30'),
+    (new.id, 'Estiramiento de Psoas (Caballero)','Movilidad',  4, '23:30'),
+    (new.id, 'Ingesta de agua/sal',             'Hidratación', 5, null);
 
   return new;
 end;

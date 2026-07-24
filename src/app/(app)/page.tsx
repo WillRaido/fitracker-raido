@@ -13,6 +13,8 @@ import {
   Dumbbell,
   ChevronRight,
   CheckCircle2,
+  Settings,
+  LogOut,
 } from "lucide-react";
 
 function ProgressRing({ done, total }: { done: number; total: number }) {
@@ -124,11 +126,31 @@ export default async function DashboardPage() {
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-24 pt-[calc(env(safe-area-inset-top)+1.5rem)] md:pb-10 md:pt-8">
-      <header className="mb-6">
-        <p className="text-sm capitalize text-neutral-500">{bogotaPretty()}</p>
-        <h1 className="text-2xl font-bold tracking-tight text-white md:text-3xl">
-          Hola de nuevo 👋
-        </h1>
+      <header className="mb-6 flex items-start justify-between">
+        <div>
+          <p className="text-sm capitalize text-neutral-500">{bogotaPretty()}</p>
+          <h1 className="text-2xl font-bold tracking-tight text-white md:text-3xl">
+            Hola de nuevo 👋
+          </h1>
+        </div>
+        <div className="flex items-center gap-1 md:hidden">
+          <Link
+            href="/ajustes"
+            aria-label="Ajustes"
+            className="rounded-full border border-neutral-800 p-2 text-neutral-400 transition hover:text-white"
+          >
+            <Settings className="h-5 w-5" />
+          </Link>
+          <form action="/auth/signout" method="post">
+            <button
+              type="submit"
+              aria-label="Cerrar sesión"
+              className="rounded-full border border-neutral-800 p-2 text-neutral-400 transition hover:text-white"
+            >
+              <LogOut className="h-5 w-5" />
+            </button>
+          </form>
+        </div>
       </header>
 
       {/* Resumen del día */}

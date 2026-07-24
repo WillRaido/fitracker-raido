@@ -10,6 +10,7 @@ import {
   Activity,
   LineChart,
   LogOut,
+  Settings,
 } from "lucide-react";
 
 const NAV = [
@@ -57,6 +58,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
 
+        <Link
+          href="/ajustes"
+          className={`mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+            isActive("/ajustes")
+              ? "bg-emerald-500/10 text-emerald-400"
+              : "text-neutral-400 hover:bg-neutral-900 hover:text-white"
+          }`}
+        >
+          <Settings className="h-5 w-5" />
+          Ajustes
+        </Link>
         <form action="/auth/signout" method="post">
           <button
             type="submit"
