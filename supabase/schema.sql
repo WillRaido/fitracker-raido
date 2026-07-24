@@ -50,7 +50,8 @@ create table if not exists public.workout_sessions (
   session_date   date not null default current_date,
   notes          text,               -- notas generales de la sesión
   created_at     timestamptz not null default now(),
-  updated_at     timestamptz not null default now()
+  updated_at     timestamptz not null default now(),
+  unique (user_id, session_date)     -- una sola sesión por día
 );
 
 -- 1.4 Ejercicios realizados dentro de una sesión

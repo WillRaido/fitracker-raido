@@ -19,9 +19,18 @@ export default async function EntrenamientoPage() {
     .from("workout_sessions")
     .select("*, session_exercises(*, exercise_sets(*))")
     .eq("session_date", logDate)
-    .maybeSingle();
+    .order("created_at", { ascending: true });
 
-  const session = (data as WorkoutSession | null) ?? null;
+  // Robustez ante sesiones duplicadas antiguas: elegir la que tenga más ejercicios
+  const sessions = (data as WorkoutSession[] | null) ?? [];
+  const session =
+    sessions.length === 0
+      ? null
+      : [...sessions].sort(
+          (a, b) =>
+            (b.session_exercises?.length ?? 0) -
+            (a.session_exercises?.length ?? 0)
+        )[0];
   const prettyDate = bogotaPretty();
 
   return (

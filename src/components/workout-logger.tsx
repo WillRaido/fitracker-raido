@@ -32,25 +32,51 @@ export default function WorkoutLogger({
   );
   const [newExercise, setNewExercise] = useState("");
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function startSession() {
     setBusy(true);
-    const { data, error } = await supabase
+    setError(null);
+
+    // Reutilizar la sesión de hoy si ya existe (evita duplicados)
+    const { data: existing } = await supabase
+      .from("workout_sessions")
+      .select("*, session_exercises(*, exercise_sets(*))")
+      .eq("session_date", logDate)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (existing) {
+      setSession(existing as WorkoutSession);
+      setExercises(
+        (existing as WorkoutSession).session_exercises?.sort(
+          (a, b) => a.order_index - b.order_index
+        ) ?? []
+      );
+      setBusy(false);
+      return;
+    }
+
+    const { data, error: insErr } = await supabase
       .from("workout_sessions")
       .insert({ user_id: userId, session_date: logDate })
       .select("*")
       .single();
     setBusy(false);
-    if (!error && data) {
-      setSession({ ...data, session_exercises: [] } as WorkoutSession);
+    if (insErr) {
+      setError(`No se pudo iniciar la sesión: ${insErr.message}`);
+      return;
     }
+    if (data) setSession({ ...data, session_exercises: [] } as WorkoutSession);
   }
 
   async function addExercise(e: React.FormEvent) {
     e.preventDefault();
     if (!newExercise.trim() || !session) return;
     setBusy(true);
-    const { data, error } = await supabase
+    setError(null);
+    const { data, error: insErr } = await supabase
       .from("session_exercises")
       .insert({
         session_id: session.id,
@@ -60,7 +86,11 @@ export default function WorkoutLogger({
       .select("*")
       .single();
     setBusy(false);
-    if (!error && data) {
+    if (insErr) {
+      setError(`No se pudo guardar el ejercicio: ${insErr.message}`);
+      return;
+    }
+    if (data) {
       setExercises((prev) => [...prev, { ...data, exercise_sets: [] }]);
       setNewExercise("");
     }
@@ -119,6 +149,26 @@ export default function WorkoutLogger({
     await supabase.from("exercise_sets").delete().eq("id", setId);
   }
 
+  async function updateSet(
+    exerciseId: string,
+    setId: string,
+    patch: Partial<Pick<ExerciseSet, "set_type" | "reps" | "weight_kg">>
+  ) {
+    setExercises((prev) =>
+      prev.map((e) =>
+        e.id === exerciseId
+          ? {
+              ...e,
+              exercise_sets: e.exercise_sets.map((s) =>
+                s.id === setId ? { ...s, ...patch } : s
+              ),
+            }
+          : e
+      )
+    );
+    await supabase.from("exercise_sets").update(patch).eq("id", setId);
+  }
+
   if (!session) {
     return (
       <div className="rounded-2xl border border-neutral-800 bg-neutral-900/50 p-6 text-center">
@@ -135,12 +185,18 @@ export default function WorkoutLogger({
           <Plus className="h-5 w-5" />
           Iniciar entrenamiento
         </button>
+        {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
+      {error && (
+        <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-400">
+          {error}
+        </p>
+      )}
       {exercises.map((ex) => (
         <ExerciseCard
           key={ex.id}
@@ -149,6 +205,7 @@ export default function WorkoutLogger({
           onSaveNotes={(notes) => saveExerciseNotes(ex.id, notes)}
           onAddSet={(payload) => addSet(ex.id, payload)}
           onDeleteSet={(setId) => deleteSet(ex.id, setId)}
+          onUpdateSet={(setId, patch) => updateSet(ex.id, setId, patch)}
         />
       ))}
 
@@ -181,6 +238,7 @@ function ExerciseCard({
   onSaveNotes,
   onAddSet,
   onDeleteSet,
+  onUpdateSet,
 }: {
   exercise: SessionExercise;
   onDelete: () => void;
@@ -189,6 +247,10 @@ function ExerciseCard({
     p: Omit<ExerciseSet, "id" | "session_exercise_id" | "set_number">
   ) => void;
   onDeleteSet: (setId: string) => void;
+  onUpdateSet: (
+    setId: string,
+    patch: Partial<Pick<ExerciseSet, "set_type" | "reps" | "weight_kg">>
+  ) => void;
 }) {
   const [setType, setSetType] = useState<SetType>("effective");
   const [reps, setReps] = useState("");
@@ -258,21 +320,48 @@ function ExerciseCard({
                 key={s.id}
                 className="grid grid-cols-[auto_1fr_1fr_auto] items-center gap-2 rounded-lg bg-neutral-800/40 px-2 py-2 text-sm"
               >
-                <span
-                  className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${
+                <button
+                  type="button"
+                  onClick={() =>
+                    onUpdateSet(s.id, {
+                      set_type:
+                        s.set_type === "warmup" ? "effective" : "warmup",
+                    })
+                  }
+                  className={`rounded px-1.5 py-1 text-[11px] font-semibold transition ${
                     s.set_type === "warmup"
-                      ? "bg-amber-500/20 text-amber-400"
-                      : "bg-emerald-500/20 text-emerald-400"
+                      ? "bg-amber-500/20 text-amber-400 hover:bg-amber-500/30"
+                      : "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
                   }`}
+                  aria-label="Cambiar tipo de serie"
                 >
                   {s.set_type === "warmup" ? "SA" : "SE"}
-                </span>
-                <span className="tabular-nums text-neutral-100">
-                  {s.reps ?? "—"}
-                </span>
-                <span className="tabular-nums text-neutral-100">
-                  {s.weight_kg ?? "—"}
-                </span>
+                </button>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  defaultValue={s.reps ?? ""}
+                  onBlur={(e) => {
+                    const v = e.target.value ? parseInt(e.target.value, 10) : null;
+                    if (v !== s.reps) onUpdateSet(s.id, { reps: v });
+                  }}
+                  placeholder="—"
+                  className="w-full min-w-0 rounded bg-transparent px-1 py-0.5 tabular-nums text-neutral-100 outline-none focus:bg-neutral-900"
+                />
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.5"
+                  defaultValue={s.weight_kg ?? ""}
+                  onBlur={(e) => {
+                    const v = e.target.value
+                      ? parseFloat(e.target.value)
+                      : null;
+                    if (v !== s.weight_kg) onUpdateSet(s.id, { weight_kg: v });
+                  }}
+                  placeholder="—"
+                  className="w-full min-w-0 rounded bg-transparent px-1 py-0.5 tabular-nums text-neutral-100 outline-none focus:bg-neutral-900"
+                />
                 <button
                   onClick={() => onDeleteSet(s.id)}
                   className="text-neutral-600 transition hover:text-red-400"
