@@ -58,6 +58,8 @@ export type ManagedItem = {
   id: string;
   name: string;
   category?: string | null;
+  foods?: string | null;
+  purpose?: string | null;
   scheduled_time: string | null;
   order_index: number;
   active: boolean;

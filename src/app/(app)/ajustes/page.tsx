@@ -14,7 +14,7 @@ export default async function AjustesPage() {
   const [mealsRes, habitsRes] = await Promise.all([
     supabase
       .from("meals")
-      .select("id, name, scheduled_time, order_index, active")
+      .select("id, name, foods, purpose, scheduled_time, order_index, active")
       .order("order_index"),
     supabase
       .from("habits")
@@ -41,6 +41,7 @@ export default async function AjustesPage() {
           table="meals"
           userId={user.id}
           initialItems={meals}
+          withDetails
         />
         <ItemManager
           title="Mis hábitos"
