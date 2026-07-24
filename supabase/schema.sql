@@ -77,6 +77,30 @@ create table if not exists public.exercise_sets (
   notes               text
 );
 
+-- 1.6 Plan semanal: enfoque por día (0=Dom..6=Sab)
+create table if not exists public.workout_plan_days (
+  id         uuid primary key default uuid_generate_v4(),
+  user_id    uuid not null references auth.users(id) on delete cascade,
+  weekday    int  not null check (weekday between 0 and 6),
+  focus      text,
+  is_rest    boolean not null default false,
+  created_at timestamptz not null default now(),
+  unique (user_id, weekday)
+);
+
+-- 1.7 Plan semanal: ejercicios objetivo por día
+create table if not exists public.workout_plan_exercises (
+  id            uuid primary key default uuid_generate_v4(),
+  user_id       uuid not null references auth.users(id) on delete cascade,
+  weekday       int  not null check (weekday between 0 and 6),
+  exercise_name text not null,
+  order_index   int  not null default 0,
+  target_sets   int,
+  target_reps   text,
+  notes         text,
+  created_at    timestamptz not null default now()
+);
+
 -- =============================================================
 -- MÓDULO 2: NUTRICIÓN (5 comidas - Meal Prep diario)
 -- =============================================================
@@ -148,19 +172,23 @@ create index if not exists idx_sessions_user_date     on public.workout_sessions
 -- =============================================================
 -- ROW LEVEL SECURITY (cada usuario solo ve lo suyo)
 -- =============================================================
-alter table public.exercises          enable row level security;
-alter table public.workout_days       enable row level security;
-alter table public.workout_sessions   enable row level security;
-alter table public.session_exercises  enable row level security;
-alter table public.exercise_sets      enable row level security;
-alter table public.meals              enable row level security;
-alter table public.meal_logs          enable row level security;
-alter table public.habits             enable row level security;
-alter table public.habit_logs         enable row level security;
+alter table public.exercises              enable row level security;
+alter table public.workout_days           enable row level security;
+alter table public.workout_plan_days      enable row level security;
+alter table public.workout_plan_exercises enable row level security;
+alter table public.workout_sessions       enable row level security;
+alter table public.session_exercises      enable row level security;
+alter table public.exercise_sets          enable row level security;
+alter table public.meals                  enable row level security;
+alter table public.meal_logs              enable row level security;
+alter table public.habits                 enable row level security;
+alter table public.habit_logs             enable row level security;
 
 -- Políticas para tablas con user_id directo
 create policy "own_exercises"        on public.exercises        for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "own_workout_days"     on public.workout_days     for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "own_plan_days"        on public.workout_plan_days      for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "own_plan_exercises"   on public.workout_plan_exercises for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "own_workout_sessions" on public.workout_sessions for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "own_meals"            on public.meals            for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "own_meal_logs"        on public.meal_logs        for all using (auth.uid() = user_id) with check (auth.uid() = user_id);

@@ -19,6 +19,27 @@ export type Meal = {
   created_at: string;
 };
 
+export type PlanDay = {
+  id: string;
+  user_id: string;
+  weekday: number; // 0=Dom..6=Sab
+  focus: string | null;
+  is_rest: boolean;
+  created_at: string;
+};
+
+export type PlanExercise = {
+  id: string;
+  user_id: string;
+  weekday: number;
+  exercise_name: string;
+  order_index: number;
+  target_sets: number | null;
+  target_reps: string | null;
+  notes: string | null;
+  created_at: string;
+};
+
 /** Item editable de catálogo (comida o hábito). */
 export type ManagedItem = {
   id: string;

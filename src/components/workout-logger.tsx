@@ -7,14 +7,16 @@ import type {
   SessionExercise,
   ExerciseSet,
   SetType,
+  PlanExercise,
 } from "@/lib/types";
-import { Plus, Trash2, Dumbbell, StickyNote } from "lucide-react";
+import { Plus, Trash2, Dumbbell, StickyNote, ListChecks } from "lucide-react";
 
 type Props = {
   initialSession: WorkoutSession | null;
   userId: string;
   logDate: string;
   suggestedTitle: string;
+  planExercises?: PlanExercise[];
 };
 
 export default function WorkoutLogger({
@@ -22,6 +24,7 @@ export default function WorkoutLogger({
   userId,
   logDate,
   suggestedTitle,
+  planExercises = [],
 }: Props) {
   const supabase = createClient();
   const [session, setSession] = useState<WorkoutSession | null>(initialSession);
@@ -63,12 +66,48 @@ export default function WorkoutLogger({
       .insert({ user_id: userId, session_date: logDate })
       .select("*")
       .single();
-    setBusy(false);
     if (insErr) {
+      setBusy(false);
       setError(`No se pudo iniciar la sesión: ${insErr.message}`);
       return;
     }
-    if (data) setSession({ ...data, session_exercises: [] } as WorkoutSession);
+    if (!data) {
+      setBusy(false);
+      return;
+    }
+
+    const created = { ...data, session_exercises: [] } as WorkoutSession;
+    setSession(created);
+
+    // Sembrar ejercicios del plan del día (si hay)
+    if (planExercises.length > 0) {
+      await seedPlanExercises(created.id);
+    }
+    setBusy(false);
+  }
+
+  async function seedPlanExercises(sessionId: string) {
+    if (planExercises.length === 0) return;
+    const rows = planExercises.map((p, i) => ({
+      session_id: sessionId,
+      exercise_name: p.exercise_name,
+      order_index: i,
+    }));
+    const { data, error: insErr } = await supabase
+      .from("session_exercises")
+      .insert(rows)
+      .select("*");
+    if (insErr) {
+      setError(`No se pudieron cargar los ejercicios del plan: ${insErr.message}`);
+      return;
+    }
+    if (data) {
+      setExercises(
+        (data as SessionExercise[])
+          .sort((a, b) => a.order_index - b.order_index)
+          .map((e) => ({ ...e, exercise_sets: [] }))
+      );
+    }
   }
 
   async function addExercise(e: React.FormEvent) {
@@ -197,6 +236,17 @@ export default function WorkoutLogger({
           {error}
         </p>
       )}
+
+      {exercises.length === 0 && planExercises.length > 0 && (
+        <button
+          onClick={() => session && seedPlanExercises(session.id)}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-400 transition hover:bg-emerald-500/20"
+        >
+          <ListChecks className="h-4 w-4" />
+          Cargar {planExercises.length} ejercicios del plan de hoy
+        </button>
+      )}
+
       {exercises.map((ex) => (
         <ExerciseCard
           key={ex.id}
