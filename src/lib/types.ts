@@ -35,3 +35,37 @@ export type ChecklistItem = {
   category?: string | null;
   completed: boolean;
 };
+
+// ---------- Entrenamiento ----------
+export type SetType = "warmup" | "effective";
+
+export type ExerciseSet = {
+  id: string;
+  session_exercise_id: string;
+  set_number: number;
+  set_type: SetType;
+  reps: number | null;
+  weight_kg: number | null;
+  rir: number | null;
+  notes: string | null;
+};
+
+export type SessionExercise = {
+  id: string;
+  session_id: string;
+  exercise_id: string | null;
+  exercise_name: string;
+  order_index: number;
+  notes: string | null;
+  exercise_sets: ExerciseSet[];
+};
+
+export type WorkoutSession = {
+  id: string;
+  user_id: string;
+  workout_day_id: string | null;
+  session_date: string;
+  notes: string | null;
+  created_at: string;
+  session_exercises: SessionExercise[];
+};
