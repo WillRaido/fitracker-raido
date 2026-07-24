@@ -81,6 +81,7 @@ export type ChecklistItem = {
   category?: string | null;
   time?: string | null;
   detail?: string | null;
+  emoji?: string | null;
   completed: boolean;
 };
 

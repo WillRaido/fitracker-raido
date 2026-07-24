@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import ChecklistSection from "@/components/checklist-section";
 import { bogotaDate, bogotaPretty } from "@/lib/date";
 import type { Meal, MealLog, ChecklistItem } from "@/lib/types";
+import { mealEmoji } from "@/lib/emoji";
 import { UtensilsCrossed } from "lucide-react";
 
 export default async function NutricionPage() {
@@ -28,6 +29,7 @@ export default async function NutricionPage() {
     name: m.name,
     time: m.scheduled_time,
     detail: m.foods,
+    emoji: mealEmoji(m.name),
     completed: done.get(m.id) ?? false,
   }));
 

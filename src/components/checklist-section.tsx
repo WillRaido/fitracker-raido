@@ -76,26 +76,30 @@ export default function ChecklistSection({
         </span>
       </header>
 
-      <ul className="space-y-1">
+      <ul className="space-y-2">
         {items.map((item) => (
           <li key={item.id}>
             <button
               onClick={() => toggle(item)}
-              className="flex w-full items-start gap-3 rounded-xl px-2 py-3 text-left transition active:scale-[0.99] hover:bg-neutral-800/50"
+              className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left transition active:scale-[0.99] ${
+                item.completed
+                  ? "border-emerald-500/30 bg-emerald-500/5"
+                  : "border-neutral-800 bg-neutral-900/40 hover:border-neutral-700"
+              }`}
             >
-              <span
-                className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition ${
-                  item.completed
-                    ? "border-emerald-500 bg-emerald-500 text-neutral-950"
-                    : "border-neutral-600 bg-transparent"
-                }`}
-              >
-                {item.completed && <Check className="h-4 w-4" strokeWidth={3} />}
-              </span>
+              {item.emoji && (
+                <span
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl transition ${
+                    item.completed ? "bg-emerald-500/10" : "bg-neutral-800"
+                  }`}
+                >
+                  {item.emoji}
+                </span>
+              )}
               <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-2">
+                <span className="flex flex-wrap items-center gap-2">
                   <span
-                    className={`text-sm font-medium transition ${
+                    className={`text-sm font-semibold transition ${
                       item.completed
                         ? "text-neutral-500 line-through"
                         : "text-neutral-100"
@@ -104,25 +108,29 @@ export default function ChecklistSection({
                     {item.name}
                   </span>
                   {item.time && (
-                    <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-neutral-400">
+                    <span className="rounded-full bg-neutral-800 px-2 py-0.5 text-[11px] font-medium tabular-nums text-neutral-400">
                       {item.time.slice(0, 5)}
                     </span>
                   )}
                 </span>
                 {item.detail && (
                   <span
-                    className={`mt-0.5 block whitespace-pre-line text-xs leading-relaxed transition ${
+                    className={`mt-1 block whitespace-pre-line text-xs leading-relaxed transition ${
                       item.completed ? "text-neutral-600" : "text-neutral-400"
                     }`}
                   >
                     {item.detail}
                   </span>
                 )}
-                {item.category && (
-                  <span className="text-xs text-neutral-500">
-                    {item.category}
-                  </span>
-                )}
+              </span>
+              <span
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 transition ${
+                  item.completed
+                    ? "border-emerald-500 bg-emerald-500 text-neutral-950"
+                    : "border-neutral-600 bg-transparent"
+                }`}
+              >
+                {item.completed && <Check className="h-4 w-4" strokeWidth={3} />}
               </span>
             </button>
           </li>
