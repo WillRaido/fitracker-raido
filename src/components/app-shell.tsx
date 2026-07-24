@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 const NAV = [
-  { href: "/", label: "Inicio", icon: Home },
+  { href: "/inicio", label: "Inicio", icon: Home },
   { href: "/entrenamiento", label: "Entreno", icon: Dumbbell },
   { href: "/nutricion", label: "Nutrición", icon: UtensilsCrossed },
   { href: "/habitos", label: "Hábitos", icon: Activity },
@@ -24,7 +24,7 @@ const NAV = [
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname.startsWith(href);
+    href === "/inicio" ? pathname === "/inicio" : pathname.startsWith(href);
 
   return (
     <div className="md:flex">
