@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2, Mail, CheckCircle2 } from "lucide-react";
@@ -11,6 +11,14 @@ export default function LoginPage() {
     "idle"
   );
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    const err = new URLSearchParams(window.location.search).get("error");
+    if (err) {
+      setStatus("error");
+      setMessage(err);
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
