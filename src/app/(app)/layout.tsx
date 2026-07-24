@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import BottomNav from "@/components/bottom-nav";
+import AppShell from "@/components/app-shell";
 
 export default async function AppLayout({
   children,
@@ -16,10 +16,5 @@ export default async function AppLayout({
     redirect("/login");
   }
 
-  return (
-    <>
-      {children}
-      <BottomNav />
-    </>
-  );
+  return <AppShell>{children}</AppShell>;
 }

@@ -21,7 +21,7 @@ export default async function HistorialPage() {
       | null) ?? [];
 
   return (
-    <main className="mx-auto min-h-[100dvh] w-full max-w-md px-4 pb-24 pt-[calc(env(safe-area-inset-top)+1.5rem)]">
+    <main className="mx-auto w-full max-w-md px-4 pb-24 pt-[calc(env(safe-area-inset-top)+1.5rem)] md:max-w-2xl md:pb-10 md:pt-8">
       <header className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight text-white">
           Historial
