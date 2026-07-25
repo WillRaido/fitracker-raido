@@ -102,15 +102,51 @@ plan (igual que se hizo con su propio usuario).
 **SMTP (opcional, a futuro):** solo si se quiere "reset de contraseña" por correo
 o invitaciones automáticas. No es necesario para el login actual.
 
+## 7b. Aislamiento de datos (aclaración importante)
+
+**NO hay fuga de datos.** La RLS está correcta en todas las tablas
+(`auth.uid() = user_id`). El síntoma de "usuario nuevo ve datos de Will" fue
+porque **no se cerró la sesión de Will**: el middleware redirige `/login → /inicio`
+si ya hay sesión, así que nunca se llegó al formulario y se navegó como Will.
+**Para probar otro usuario: cerrar sesión o usar incógnito.**
+
+Nota: el trigger `seed_user_defaults` da a cada usuario nuevo las mismas
+comidas/hábitos por defecto (mismos nombres). Eso es normal y son datos propios.
+
+## 7c. Onboarding — decisión: HÍBRIDO
+
+- **Autorregistro** disponible (`/registro`): nombre, apellido, edad, peso,
+  objetivo, contraseña → `signUp` + guardar en `user_profile`.
+- **Admin (Will)** puede seguir creando usuarios y cargando/override su plan por
+  seed SQL usando el `user id`.
+- **Onboarding guiado** en el primer ingreso: si `user_profile` está incompleto →
+  llevar al asistente; si ya está completo → dashboard.
+- **Sin depender de correos:** desactivar "Confirm email" en Supabase Auth
+  (mientras no haya SMTP) para que el registro entre directo.
+
+### Plan de implementación (pendiente)
+1. **Migración 005**: extender `user_profile` con `first_name`, `last_name`,
+   `age int`, `weight_kg numeric`, `onboarding_done boolean default false`.
+   Actualizar `schema.sql` y el tipo `UserProfile` en `src/lib/types.ts`.
+2. **/registro**: página de autorregistro (`supabase.auth.signUp`) + inserción de
+   perfil. Enlazar desde `/login` y desde la landing.
+3. **Middleware/gate**: si hay sesión pero `onboarding_done = false` →
+   redirigir a `/onboarding`.
+4. **/onboarding**: asistente (wizard) que recoge/confirma perfil y explica la app,
+   al terminar marca `onboarding_done = true`.
+5. **Banner con parallax** en `/inicio`: saludo con el `first_name`
+   ("Hola, Will") y efecto parallax al hacer scroll (client component).
+6. Config Supabase: desactivar "Confirm email".
+
 ## 8. Próximos pasos (backlog)
 
-1. Crear usuarios para esposa/amigo en Supabase y cargarles su plan (seeds).
+1. **[EN CURSO]** Onboarding híbrido (ver 7c): migración 005 → /registro →
+   /onboarding → banner parallax.
 2. Instalar la PWA en iPhone y validar.
 3. (Opcional) Pantalla para que el usuario cambie su propia contraseña.
 4. Gráficos de progreso en `/historial`.
-5. Asistente de onboarding para nuevos usuarios.
-6. Recordatorios basados en horarios (`scheduled_time`).
-7. Mejoras visuales continuas.
+5. Recordatorios basados en horarios (`scheduled_time`).
+6. Mejoras visuales continuas.
 
 ## 9. Comandos útiles
 
