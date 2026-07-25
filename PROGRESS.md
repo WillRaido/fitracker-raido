@@ -15,7 +15,7 @@ invitar a familia/amigos más adelante.
 
 - **Next.js 14** (App Router, TypeScript)
 - **TailwindCSS**
-- **Supabase** (PostgreSQL + Auth Magic Link + Row Level Security)
+- **Supabase** (PostgreSQL + Auth email/contraseña + Row Level Security)
 - **next-pwa** (service worker, solo en producción)
 - **lucide-react** (iconos)
 - **Vercel** (hosting, integración con GitHub)
@@ -23,9 +23,8 @@ invitar a familia/amigos más adelante.
 ## 3. Arquitectura de rutas
 
 - `/` → **Landing page pública** (parallax, 3 pilares, marca Raido).
-- `/login` → Login con Magic Link. Muestra errores vía `?error=`.
-- `/auth/callback` → Canjea `?code=` (flujo PKCE) → sesión. (Flujo por defecto actual.)
-- `/auth/confirm` → Verifica `token_hash` (patrón SSR robusto). **Listo pero requiere plantilla de correo personalizada** (ver bloqueo abajo).
+- `/login` → **Login con email + contraseña** (`signInWithPassword`). Muestra errores vía `?error=` y validación en línea.
+- `/auth/callback` y `/auth/confirm` → Rutas del flujo Magic Link (ya no se usan; quedan como referencia por si se retoma OTP).
 - `/(app)` → Rutas protegidas (middleware redirige a `/login` sin sesión):
   - `/inicio` → Dashboard (anillos de progreso, rachas, tarjeta de objetivo/ciclo).
   - `/entrenamiento` → Registro diario; `/entrenamiento/plan` → editor del plan semanal.
@@ -78,45 +77,40 @@ invitar a familia/amigos más adelante.
 
 **DNS (Hostinger):** `CNAME fitracker → 325692354f3d5c02.vercel-dns-017.com`.
 
-## 7. BLOQUEO ACTUAL — Login por correo
+## 7. Autenticación — email + contraseña
 
-**Síntoma:** al hacer clic en el Magic Link → error `otp_expired`
-("Email link is invalid or has expired"), redirige al landing.
+Se **abandonó Magic Link** (rate limit de 2/h del correo integrado + no permitía
+editar plantillas sin SMTP). Ahora el login es **email + contraseña**
+(`supabase.auth.signInWithPassword`).
 
-**Causa raíz:** el correo integrado de Supabase tiene **rate limit de 2/hora**
-y no permite editar plantillas ("Set up custom SMTP to edit templates").
-Sumado a prefetch de proveedores / clics en enlaces viejos.
+**Modelo de uso:** Will (admin) crea las cuentas de amigos/esposa y les carga el
+plan (igual que se hizo con su propio usuario).
 
-**Solución acordada (pendiente de hacer):** configurar **SMTP propio (Resend)**:
-1. Crear cuenta en resend.com (gratis, 3.000/mes).
-2. Verificar dominio `raido.com.co` (agregar registros SPF/DKIM en Hostinger DNS).
-3. Crear API Key (`re_...`).
-4. En Supabase → Authentication → Emails → SMTP Settings (Enable custom SMTP):
-   - Host `smtp.resend.com`, Port `465`, Username `resend`, Password = API key.
-   - Sender: `no-reply@raido.com.co`, nombre `Fitracker`.
-5. Esto sube el límite a 30/h y **desbloquea plantillas**.
-6. Editar plantilla Magic Link para usar el endpoint robusto ya implementado:
-   ```html
-   <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email">
-     Iniciar sesión
-   </a>
-   ```
+**Cómo crear un usuario nuevo (Supabase Dashboard):**
+1. Authentication → **Users → Add user**.
+2. Ingresar email + contraseña y **marcar "Auto Confirm User"** (para que pueda
+   entrar sin verificar correo).
+3. Copiar el `user id` generado.
+4. Cargar su plan/nutrición con un seed SQL usando ese `user id`
+   (ver `supabase/seeds/` como plantilla).
 
-**Verificar también en Supabase → Authentication → URL Configuration:**
-- Site URL: `https://fitracker.raido.com.co`
-- Redirect URLs: `https://fitracker.raido.com.co/**`
+**Config recomendada en Supabase → Authentication:**
+- Provider **Email** habilitado (viene por defecto).
+- Opcional: desactivar "Confirm email" si se prefiere no depender de correos
+  (con "Auto Confirm User" al crear no es necesario).
 
-**Nota:** mientras no haya SMTP, el flujo por defecto (`/auth/callback`, PKCE)
-funciona si se usa un enlace fresco y no interviene el prefetch.
+**SMTP (opcional, a futuro):** solo si se quiere "reset de contraseña" por correo
+o invitaciones automáticas. No es necesario para el login actual.
 
 ## 8. Próximos pasos (backlog)
 
-1. **[BLOQUEO]** Configurar SMTP Resend → arreglar login → probar en producción.
+1. Crear usuarios para esposa/amigo en Supabase y cargarles su plan (seeds).
 2. Instalar la PWA en iPhone y validar.
-3. Gráficos de progreso en `/historial`.
-4. Asistente de onboarding para nuevos usuarios.
-5. Recordatorios basados en horarios (`scheduled_time`).
-6. Mejoras visuales continuas.
+3. (Opcional) Pantalla para que el usuario cambie su propia contraseña.
+4. Gráficos de progreso en `/historial`.
+5. Asistente de onboarding para nuevos usuarios.
+6. Recordatorios basados en horarios (`scheduled_time`).
+7. Mejoras visuales continuas.
 
 ## 9. Comandos útiles
 
