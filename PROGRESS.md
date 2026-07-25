@@ -137,6 +137,14 @@ comidas/hábitos por defecto (mismos nombres). Eso es normal y son datos propios
 5. **Banner con parallax** en `/inicio`: saludo con el `first_name`
    ("Hola, Will") y efecto parallax al hacer scroll (client component).
 6. Config Supabase: desactivar "Confirm email".
+7. **Personalizar títulos de entrenamiento del dashboard**: hoy están
+   hardcodeados en `WORKOUT_DAY_TITLES` (`src/lib/date.ts`) con el plan de Will y
+   se muestran igual para todos. Leerlos del `workout_plan_days.focus` de cada
+   usuario (fallback a "Descanso" si no tiene plan ese día).
+
+Nota verificada: el aislamiento por RLS funciona bien. Lo que un usuario nuevo ve
+"precargado" son los defaults del trigger `seed_user_defaults` + estas etiquetas
+fijas; NO son datos de otro usuario.
 
 ## 8. Próximos pasos (backlog)
 
