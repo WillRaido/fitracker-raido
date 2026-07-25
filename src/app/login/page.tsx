@@ -27,24 +27,33 @@ export default function LoginPage() {
     setStatus("loading");
     setMessage("");
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
+      if (error) {
+        setStatus("error");
+        setMessage(
+          error.message === "Invalid login credentials"
+            ? "Correo o contraseña incorrectos."
+            : error.message
+        );
+        return;
+      }
+
+      router.refresh();
+      router.push("/inicio");
+    } catch (err) {
       setStatus("error");
       setMessage(
-        error.message === "Invalid login credentials"
-          ? "Correo o contraseña incorrectos."
-          : error.message
+        err instanceof Error
+          ? `No se pudo conectar: ${err.message}`
+          : "No se pudo conectar con el servidor. Revisa tu conexión."
       );
-      return;
     }
-
-    router.refresh();
-    router.push("/inicio");
   }
 
   return (
