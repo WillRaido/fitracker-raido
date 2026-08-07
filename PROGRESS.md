@@ -1,6 +1,6 @@
 # Fitracker — Estado del Proyecto
 
-> Documento de contexto para retomar el desarrollo. Última actualización: 2026-07-24.
+> Documento de contexto para retomar el desarrollo. Última actualización: 2026-07-27.
 
 ## 1. Qué es
 
@@ -110,8 +110,11 @@ porque **no se cerró la sesión de Will**: el middleware redirige `/login → /
 si ya hay sesión, así que nunca se llegó al formulario y se navegó como Will.
 **Para probar otro usuario: cerrar sesión o usar incógnito.**
 
-Nota: el trigger `seed_user_defaults` da a cada usuario nuevo las mismas
-comidas/hábitos por defecto (mismos nombres). Eso es normal y son datos propios.
+Nota (histórico): antes el trigger `seed_user_defaults` daba a cada usuario nuevo
+las comidas/hábitos del Raido Protocol. **Se eliminó** en la migración
+`006_remove_seed_trigger.sql`. Ahora los usuarios arrancan **vacíos** y el
+onboarding ofrece cargar la **plantilla Raido** (opcional) desde
+`src/lib/templates.ts` con la sesión del propio usuario.
 
 ## 7c. Onboarding — decisión: HÍBRIDO
 
@@ -124,32 +127,44 @@ comidas/hábitos por defecto (mismos nombres). Eso es normal y son datos propios
 - **Sin depender de correos:** desactivar "Confirm email" en Supabase Auth
   (mientras no haya SMTP) para que el registro entre directo.
 
-### Plan de implementación (pendiente)
-1. **Migración 005**: extender `user_profile` con `first_name`, `last_name`,
-   `age int`, `weight_kg numeric`, `onboarding_done boolean default false`.
-   Actualizar `schema.sql` y el tipo `UserProfile` en `src/lib/types.ts`.
-2. **/registro**: página de autorregistro (`supabase.auth.signUp`) + inserción de
-   perfil. Enlazar desde `/login` y desde la landing.
-3. **Middleware/gate**: si hay sesión pero `onboarding_done = false` →
-   redirigir a `/onboarding`.
-4. **/onboarding**: asistente (wizard) que recoge/confirma perfil y explica la app,
-   al terminar marca `onboarding_done = true`.
-5. **Banner con parallax** en `/inicio`: saludo con el `first_name`
-   ("Hola, Will") y efecto parallax al hacer scroll (client component).
-6. Config Supabase: desactivar "Confirm email".
-7. **Personalizar títulos de entrenamiento del dashboard**: hoy están
-   hardcodeados en `WORKOUT_DAY_TITLES` (`src/lib/date.ts`) con el plan de Will y
-   se muestran igual para todos. Leerlos del `workout_plan_days.focus` de cada
-   usuario (fallback a "Descanso" si no tiene plan ese día).
+### Plan de implementación (estado)
+1. [HECHO] **Migración 005** (`005_profile_onboarding.sql`): extiende
+   `user_profile` con `first_name`, `last_name`, `age int`, `weight_kg numeric`,
+   `height_cm int`, `onboarding_done boolean default false`. Marca
+   `onboarding_done = true` a usuarios con `objective` (ej. Will). Tipo
+   `UserProfile` en `src/lib/types.ts` ya actualizado.
+2. [HECHO] **/registro**: autorregistro (`supabase.auth.signUp`) + upsert de
+   perfil (`src/app/registro/page.tsx`). Enlazado desde `/login`.
+3. [HECHO] **Gate de onboarding**: en `src/app/(app)/layout.tsx` (server), si no
+   hay perfil o `onboarding_done = false` → redirige a `/onboarding`. (Se hizo
+   en el layout en vez del middleware para evitar consultas DB en el edge.)
+4. [HECHO] **/onboarding**: wizard de 5 pasos
+   (`src/components/onboarding-wizard.tsx`): bienvenida → datos → objetivo →
+   elección de plantilla → resumen. Al terminar hace upsert con
+   `onboarding_done = true` y `cycle_start = hoy`.
+5. [HECHO] **Banner con parallax** en `/inicio`
+   (`src/components/dashboard-hero.tsx`): saludo según hora + `first_name`
+   ("Buenas tardes, Will") con orbes en parallax al hacer scroll.
+6. [PENDIENTE — config manual] Supabase: desactivar "Confirm email".
+7. [HECHO] **Títulos de entrenamiento personalizados**: `/inicio` y
+   `/entrenamiento` leen `workout_plan_days.focus`/`is_rest` del día actual. Si
+   el usuario no tiene plan, se muestra "Configura tu plan" (ya NO el plan de
+   Will). Se eliminó `WORKOUT_DAY_TITLES`.
+8. [HECHO] **Arranque vacío + plantilla opcional**: migración
+   `006_remove_seed_trigger.sql` quita el auto-seed. El onboarding (paso 4)
+   ofrece "Plantilla Raido" (comidas + hábitos + plan de 5 días con ejercicios,
+   en `src/lib/templates.ts`) o "Empezar vacío". La carga se hace desde el
+   cliente con la sesión del usuario (RLS).
 
-Nota verificada: el aislamiento por RLS funciona bien. Lo que un usuario nuevo ve
-"precargado" son los defaults del trigger `seed_user_defaults` + estas etiquetas
-fijas; NO son datos de otro usuario.
+Nota verificada: el aislamiento por RLS funciona bien. Tras la migración 006, un
+usuario nuevo arranca **vacío**; solo verá datos precargados si elige la
+plantilla Raido en el onboarding.
 
 ## 8. Próximos pasos (backlog)
 
-1. **[EN CURSO]** Onboarding híbrido (ver 7c): migración 005 → /registro →
-   /onboarding → banner parallax.
+1. **[HECHO]** Onboarding híbrido (ver 7c): migración 005 → /registro →
+   gate en layout → /onboarding → banner parallax → títulos personalizados.
+   Solo queda la config manual en Supabase (desactivar "Confirm email").
 2. Instalar la PWA en iPhone y validar.
 3. (Opcional) Pantalla para que el usuario cambie su propia contraseña.
 4. Gráficos de progreso en `/historial`.

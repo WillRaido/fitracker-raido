@@ -23,11 +23,17 @@ export type Meal = {
 
 export type UserProfile = {
   user_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  age: number | null;
+  weight_kg: number | null;
+  height_cm: number | null;
   objective: string | null;
   priorities: string | null;
   cycle_weeks: number | null;
   cycle_start: string | null;
   notes: string | null;
+  onboarding_done: boolean;
   created_at: string;
   updated_at: string;
 };

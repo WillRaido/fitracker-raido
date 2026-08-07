@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2, Mail, Lock } from "lucide-react";
@@ -142,8 +143,14 @@ export default function LoginPage() {
             )}
           </button>
 
-          <p className="text-center text-xs text-neutral-500">
-            ¿No tienes cuenta? Pídele acceso a tu entrenador.
+          <p className="text-center text-sm text-neutral-500">
+            ¿No tienes cuenta?{" "}
+            <Link
+              href="/registro"
+              className="text-emerald-400 hover:text-emerald-300"
+            >
+              Regístrate
+            </Link>
           </p>
         </form>
       </div>

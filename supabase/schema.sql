@@ -160,14 +160,20 @@ create table if not exists public.habit_logs (
 -- MÓDULO 4: PERFIL / OBJETIVO DEL USUARIO
 -- =============================================================
 create table if not exists public.user_profile (
-  user_id     uuid primary key references auth.users(id) on delete cascade,
-  objective   text,
-  priorities  text,
-  cycle_weeks int,
-  cycle_start date,
-  notes       text,
-  created_at  timestamptz not null default now(),
-  updated_at  timestamptz not null default now()
+  user_id         uuid primary key references auth.users(id) on delete cascade,
+  first_name      text,
+  last_name       text,
+  age             int,
+  weight_kg       numeric(5,2),
+  height_cm       int,
+  objective       text,
+  priorities      text,
+  cycle_weeks     int,
+  cycle_start     date,
+  notes           text,
+  onboarding_done boolean not null default false,
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now()
 );
 
 -- =============================================================
@@ -234,32 +240,9 @@ create policy "own_exercise_sets" on public.exercise_sets for all
     where se.id = session_exercise_id and s.user_id = auth.uid()));
 
 -- =============================================================
--- SEED AUTOMÁTICO: crea comidas y hábitos por defecto al registrarse
+-- NOTA: SIN SEED AUTOMÁTICO
+-- Los usuarios nuevos arrancan VACÍOS. El onboarding de la app ofrece
+-- cargar opcionalmente la plantilla "Raido" (comidas, hábitos y plan)
+-- desde el cliente con la sesión del propio usuario. Ver migración
+-- 006_remove_seed_trigger.sql y src/lib/templates.ts.
 -- =============================================================
-create or replace function public.seed_user_defaults()
-returns trigger as $$
-begin
-  -- 5 comidas por defecto (con horarios del Raido Protocol)
-  insert into public.meals (user_id, name, order_index, scheduled_time) values
-    (new.id, 'Pre-Entreno',    1, '11:00'),
-    (new.id, 'Post-Entreno',   2, '14:00'),
-    (new.id, 'Pre-Turno',      3, '16:30'),
-    (new.id, 'Snack Nocturno', 4, '21:00'),
-    (new.id, 'Caseína',        5, '23:30');
-
-  -- Hábitos y postura por defecto
-  insert into public.habits (user_id, name, category, order_index, scheduled_time) values
-    (new.id, 'Movilidad pre-entreno',           'Movilidad',   1, '10:45'),
-    (new.id, 'Chin Tucks (retracción cervical)','Postura',     2, '19:30'),
-    (new.id, 'Isométricos de cuello',           'Postura',     3, '19:30'),
-    (new.id, 'Estiramiento de Psoas (Caballero)','Movilidad',  4, '23:30'),
-    (new.id, 'Ingesta de agua/sal',             'Hidratación', 5, null);
-
-  return new;
-end;
-$$ language plpgsql security definer;
-
-drop trigger if exists trg_seed_user_defaults on auth.users;
-create trigger trg_seed_user_defaults
-  after insert on auth.users
-  for each row execute function public.seed_user_defaults();

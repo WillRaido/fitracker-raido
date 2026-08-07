@@ -15,6 +15,24 @@ export function bogotaPretty(d: Date = new Date()): string {
   }).format(d);
 }
 
+/** Hora del día (0-23) en Colombia. */
+export function bogotaHour(d: Date = new Date()): number {
+  const h = new Intl.DateTimeFormat("en-GB", {
+    timeZone: TZ,
+    hour: "2-digit",
+    hour12: false,
+  }).format(d);
+  return parseInt(h, 10);
+}
+
+/** Saludo según la hora en Colombia. */
+export function bogotaGreeting(d: Date = new Date()): string {
+  const h = bogotaHour(d);
+  if (h < 12) return "Buenos días";
+  if (h < 19) return "Buenas tardes";
+  return "Buenas noches";
+}
+
 /** Día de la semana en Colombia: 0=Domingo .. 6=Sábado. */
 export function bogotaWeekday(d: Date = new Date()): number {
   const name = d.toLocaleDateString("en-US", {
@@ -33,12 +51,3 @@ export function bogotaWeekday(d: Date = new Date()): number {
   return map[name] ?? 1;
 }
 
-export const WORKOUT_DAY_TITLES: Record<number, string> = {
-  1: "Día 1 · Pierna A (Cuádriceps)",
-  2: "Día 2 · Empuje (Pecho, Hombro, Tríceps)",
-  3: "Miércoles · Descanso activo",
-  4: "Día 4 · Tirón (Espalda, Bíceps)",
-  5: "Día 5 · Pierna B (Isquios, Glúteo)",
-  6: "Día 6 · Torso (Bombeo)",
-  0: "Domingo · Descanso total",
-};

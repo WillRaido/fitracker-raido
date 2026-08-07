@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import DashboardHero from "@/components/dashboard-hero";
 import type { UserProfile } from "@/lib/types";
 import {
   bogotaDate,
+  bogotaGreeting,
   bogotaPretty,
   bogotaWeekday,
-  WORKOUT_DAY_TITLES,
 } from "@/lib/date";
 import {
   Activity,
@@ -77,6 +78,7 @@ export default async function DashboardPage() {
     sessionRes,
     streakLogsRes,
     profileRes,
+    planDayRes,
   ] = await Promise.all([
     supabase.from("habits").select("id").eq("active", true),
     supabase.from("meals").select("id").eq("active", true),
@@ -101,6 +103,11 @@ export default async function DashboardPage() {
       .eq("completed", true)
       .gte("log_date", sinceDate),
     supabase.from("user_profile").select("*").maybeSingle(),
+    supabase
+      .from("workout_plan_days")
+      .select("focus, is_rest")
+      .eq("weekday", dow)
+      .maybeSingle(),
   ]);
 
   const habitsTotal = habitsRes.data?.length ?? 0;
@@ -133,6 +140,18 @@ export default async function DashboardPage() {
   }
 
   const profile = profileRes.data as UserProfile | null;
+
+  // Título de entrenamiento del día según el plan del usuario. Si aún no tiene
+  // plan, se invita a configurarlo (no se muestra ningún plan ajeno).
+  const planDay = planDayRes.data as {
+    focus: string | null;
+    is_rest: boolean;
+  } | null;
+  const workoutTitle = !planDay
+    ? "Configura tu plan"
+    : planDay.is_rest
+      ? "Descanso"
+      : planDay.focus?.trim() || "Entrenamiento";
   let cycleWeek: number | null = null;
   if (profile?.cycle_start) {
     const start = new Date(`${profile.cycle_start}T12:00:00`);
@@ -147,7 +166,7 @@ export default async function DashboardPage() {
     {
       href: "/entrenamiento",
       label: "Entrenamiento",
-      sub: WORKOUT_DAY_TITLES[dow],
+      sub: workoutTitle,
       icon: Dumbbell,
       status: workoutStarted
         ? `${exercisesCount} ejercicios registrados`
@@ -177,18 +196,16 @@ export default async function DashboardPage() {
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 pb-24 pt-[calc(env(safe-area-inset-top)+1.5rem)] md:pb-10 md:pt-8">
-      <header className="mb-6 flex items-start justify-between">
-        <div>
-          <p className="text-sm capitalize text-neutral-500">{bogotaPretty()}</p>
-          <h1 className="text-2xl font-bold tracking-tight text-white md:text-3xl">
-            Hola de nuevo 👋
-          </h1>
-        </div>
+      <DashboardHero
+        firstName={profile?.first_name ?? null}
+        prettyDate={bogotaPretty()}
+        greeting={bogotaGreeting()}
+      >
         <div className="flex items-center gap-1 md:hidden">
           <Link
             href="/ajustes"
             aria-label="Ajustes"
-            className="rounded-full border border-neutral-800 p-2 text-neutral-400 transition hover:text-white"
+            className="rounded-full border border-neutral-800 bg-neutral-950/40 p-2 text-neutral-400 transition hover:text-white"
           >
             <Settings className="h-5 w-5" />
           </Link>
@@ -196,13 +213,13 @@ export default async function DashboardPage() {
             <button
               type="submit"
               aria-label="Cerrar sesión"
-              className="rounded-full border border-neutral-800 p-2 text-neutral-400 transition hover:text-white"
+              className="rounded-full border border-neutral-800 bg-neutral-950/40 p-2 text-neutral-400 transition hover:text-white"
             >
               <LogOut className="h-5 w-5" />
             </button>
           </form>
         </div>
-      </header>
+      </DashboardHero>
 
       {/* Objetivo del ciclo */}
       {profile?.objective && (

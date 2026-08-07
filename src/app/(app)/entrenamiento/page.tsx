@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import WorkoutLogger from "@/components/workout-logger";
 import type { WorkoutSession, PlanDay, PlanExercise } from "@/lib/types";
-import { bogotaDate, bogotaPretty, bogotaWeekday, WORKOUT_DAY_TITLES } from "@/lib/date";
+import { bogotaDate, bogotaPretty, bogotaWeekday } from "@/lib/date";
 import { CalendarCog } from "lucide-react";
 
 export default async function EntrenamientoPage() {
@@ -37,10 +37,11 @@ export default async function EntrenamientoPage() {
   const planDay = planDayRes.data as PlanDay | null;
   const planExercises = (planExRes.data ?? []) as PlanExercise[];
 
-  // El enfoque del plan tiene prioridad sobre el título por defecto
+  // El enfoque del plan del usuario define el título; si no tiene plan, se usa
+  // un título neutro (no se asume ningún plan ajeno).
   const suggestedTitle = planDay?.is_rest
     ? "Día de descanso"
-    : planDay?.focus || WORKOUT_DAY_TITLES[dow];
+    : planDay?.focus || "Entrenamiento del día";
 
   const { data } = sessionRes;
 

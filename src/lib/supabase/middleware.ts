@@ -38,6 +38,7 @@ export async function updateSession(request: NextRequest) {
   const isPublic =
     pathname === "/" ||
     pathname.startsWith("/login") ||
+    pathname.startsWith("/registro") ||
     pathname.startsWith("/auth");
 
   // Sin sesión -> a login
